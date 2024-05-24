@@ -13,6 +13,15 @@ import { formatCurrency, formatDate, formatNumber } from '../../lib/formatters';
 import { OrdersByDayChart } from './_components/charts/OrdersByDayChart';
 import { UsersByDayChart } from './_components/charts/UsersByDayChart';
 import { RevenueByProductChart } from './_components/charts/RevenueByProductChart';
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuTrigger,
+} from '../../components/ui/dropdown-menu';
+import { Button } from '../../components/ui/button';
+import { RANGE_OPTIONS, getRangeOption } from '../../lib/rangeOptions';
+import { ChartCard } from './_components/ChartCard';
 
 async function getSalesData(
 	createdAfter: Date | null,
@@ -146,11 +155,35 @@ async function getProductData(
 	};
 }
 
-export default async function AdminDashboard() {
+export default async function AdminDashboard({
+	searchParams: { newCustomersRange, revenueByProductRange, totalSalesRange },
+}: {
+	searchParams: {
+		totalSalesRange?: string;
+		newCustomersRange?: string;
+		revenueByProductRange?: string;
+	};
+}) {
+	const totalSalesRangeOption =
+		getRangeOption(totalSalesRange) || RANGE_OPTIONS.last_7_days;
+	const newCustomersRangeOption =
+		getRangeOption(newCustomersRange) || RANGE_OPTIONS.last_7_days;
+	const revenueByProductRangeOption =
+		getRangeOption(revenueByProductRange) || RANGE_OPTIONS.all_time;
+
 	const [salesData, userData, productData] = await Promise.all([
-		getSalesData(subDays(new Date(), 6), new Date()),
-		getUserData(subDays(new Date(), 6), new Date()),
-		getProductData(subDays(new Date(), 6), new Date()),
+		getSalesData(
+			totalSalesRangeOption.startDate,
+			totalSalesRangeOption.endDate
+		),
+		getUserData(
+			newCustomersRangeOption.startDate,
+			newCustomersRangeOption.endDate
+		),
+		getProductData(
+			revenueByProductRangeOption.startDate,
+			revenueByProductRangeOption.endDate
+		),
 	]);
 	return (
 		<>
@@ -174,13 +207,25 @@ export default async function AdminDashboard() {
 				/>
 			</div>
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-8">
-				<ChartCard title="Total Sales">
+				<ChartCard
+					title="Total Sales"
+					queryKey="totalSalesRange"
+					selectedRangeLabel={totalSalesRangeOption.label}
+				>
 					<OrdersByDayChart data={salesData.chartData} />
 				</ChartCard>
-				<ChartCard title="New Customers">
+				<ChartCard
+					title="New Customers"
+					queryKey="newCustomersRange"
+					selectedRangeLabel={newCustomersRangeOption.label}
+				>
 					<UsersByDayChart data={userData.chartData} />
 				</ChartCard>
-				<ChartCard title="Revenue By Product">
+				<ChartCard
+					title="Revenue By Product"
+					queryKey="revenueByProductRange"
+					selectedRangeLabel={revenueByProductRangeOption.label}
+				>
 					<RevenueByProductChart data={productData.chartData} />
 				</ChartCard>
 			</div>
@@ -204,22 +249,6 @@ function DashboardCard({ title, subtitle, body }: DashboardCardProps) {
 			<CardContent>
 				<p>{body}</p>
 			</CardContent>
-		</Card>
-	);
-}
-
-type ChartCardProps = {
-	title: string;
-	children: ReactNode;
-};
-
-function ChartCard({ title, children }: ChartCardProps) {
-	return (
-		<Card>
-			<CardHeader>
-				<CardTitle>{title}</CardTitle>
-			</CardHeader>
-			<CardContent>{children}</CardContent>
 		</Card>
 	);
 }
