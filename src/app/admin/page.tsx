@@ -11,6 +11,8 @@ import {
 import db from '../../db/db';
 import { formatCurrency, formatDate, formatNumber } from '../../lib/formatters';
 import { OrdersByDayChart } from './_components/charts/OrdersByDayChart';
+import { UsersByDayChart } from './_components/charts/UsersByDayChart';
+import { RevenueByProductChart } from './_components/charts/RevenueByProductChart';
 
 async function getSalesData(
 	createdAfter: Date | null,
@@ -57,15 +59,46 @@ async function getSalesData(
 	};
 }
 
-async function getUserData() {
-	const [userCount, orderData] = await Promise.all([
+async function getUserData(
+	createdAfter: Date | null,
+	createdBefore: Date | null
+) {
+	const createdAtQuery: Prisma.UserWhereInput['createdAt'] = {};
+	if (createdAfter) createdAtQuery.gte = createdAfter;
+	if (createdBefore) createdAtQuery.lte = createdBefore;
+
+	const [userCount, orderData, chartData] = await Promise.all([
 		db.user.count(),
 		db.order.aggregate({
 			_sum: { priceInCents: true },
 		}),
+		db.user.findMany({
+			select: { createdAt: true },
+			where: { createdAt: createdAtQuery },
+			orderBy: { createdAt: 'asc' },
+		}),
 	]);
 
+	const dayArray = eachDayOfInterval(
+		interval(
+			createdAfter || startOfDay(chartData[0].createdAt),
+			createdBefore || new Date()
+		)
+	).map(date => {
+		return {
+			date: formatDate(date),
+			totalUsers: 0,
+		};
+	});
+
 	return {
+		chartData: chartData.reduce((data, user) => {
+			const formattedDate = formatDate(user.createdAt);
+			const entry = dayArray.find(day => day.date === formattedDate);
+			if (entry == null) return data;
+			entry.totalUsers += 1;
+			return data;
+		}, dayArray),
 		userCount,
 		averageValuePerUser:
 			userCount === 0
@@ -74,20 +107,50 @@ async function getUserData() {
 	};
 }
 
-async function getProductData() {
-	const [activeCount, inactiveCount] = await Promise.all([
+async function getProductData(
+	createdAfter: Date | null,
+	createdBefore: Date | null
+) {
+	const createdAtQuery: Prisma.OrderWhereInput['createdAt'] = {};
+	if (createdAfter) createdAtQuery.gte = createdAfter;
+	if (createdBefore) createdAtQuery.lte = createdBefore;
+
+	const [activeCount, inactiveCount, chartData] = await Promise.all([
 		db.product.count({ where: { isAvailableForPurchase: true } }),
 		db.product.count({ where: { isAvailableForPurchase: false } }),
+		db.product.findMany({
+			select: {
+				name: true,
+				orders: {
+					select: { priceInCents: true },
+					where: { createdAt: createdAtQuery },
+				},
+			},
+		}),
 	]);
 
-	return { activeCount, inactiveCount };
+	return {
+		chartData: chartData
+			.map(product => {
+				return {
+					name: product.name,
+					revenue: product.orders.reduce(
+						(sum, order) => sum + order.priceInCents / 100,
+						0
+					),
+				};
+			})
+			.filter(product => product.revenue > 0),
+		activeCount,
+		inactiveCount,
+	};
 }
 
 export default async function AdminDashboard() {
 	const [salesData, userData, productData] = await Promise.all([
 		getSalesData(subDays(new Date(), 6), new Date()),
-		getUserData(),
-		getProductData(),
+		getUserData(subDays(new Date(), 6), new Date()),
+		getProductData(subDays(new Date(), 6), new Date()),
 	]);
 	return (
 		<>
@@ -114,8 +177,11 @@ export default async function AdminDashboard() {
 				<ChartCard title="Total Sales">
 					<OrdersByDayChart data={salesData.chartData} />
 				</ChartCard>
-				<ChartCard title="Total Sales">
-					<OrdersByDayChart data={salesData.chartData} />
+				<ChartCard title="New Customers">
+					<UsersByDayChart data={userData.chartData} />
+				</ChartCard>
+				<ChartCard title="Revenue By Product">
+					<RevenueByProductChart data={productData.chartData} />
 				</ChartCard>
 			</div>
 		</>
