@@ -6,15 +6,13 @@ import {
 	Section,
 	Text,
 } from '@react-email/components';
-import { formatCurrency } from '../../lib/formatters';
+import { formatCurrency, formatDateTime } from '../../lib/formatters';
 
 type OrderInformationProps = {
 	order: { id: string; createdAt: Date; priceInCents: number };
 	product: { imagePath: string; name: string; description: string };
 	downloadVerificationId: string;
 };
-
-const dateFormatter = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
 
 export function OrderInformation({
 	order,
@@ -35,9 +33,7 @@ export function OrderInformation({
 						<Text className="mb-0 text-gray-500 whitespace-nowrap text-nowrap mr-4">
 							Purchased On
 						</Text>
-						<Text className="mt-0 mr-4">
-							{dateFormatter.format(order.createdAt)}
-						</Text>
+						<Text className="mt-0 mr-4">{formatDateTime(order.createdAt)}</Text>
 					</Column>
 					<Column>
 						<Text className="mb-0 text-gray-500 whitespace-nowrap text-nowrap mr-4">
