@@ -1,10 +1,9 @@
 import Image from 'next/image';
-import { formatCurrency } from '../../../../lib/formatters';
-import Stripe from 'stripe';
-import { notFound } from 'next/navigation';
-import db from '../../../../db/db';
-import { Button } from '../../../../components/ui/button';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import Stripe from 'stripe';
+import { Button } from '../../../../components/ui/button';
+import db from '../../../../db/db';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 
@@ -43,9 +42,6 @@ export default async function SuccessPage({
 					/>
 				</div>
 				<div>
-					<div className="text-lg">
-						{formatCurrency(product.priceInCents / 100)}
-					</div>
 					<h1 className="text-2xl font-bold">{product.name}</h1>
 					<div className="line-clamp-3 text-muted-foreground">
 						{product.description}

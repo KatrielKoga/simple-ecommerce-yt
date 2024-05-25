@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import db from '../../../db/db';
 import { Resend } from 'resend';
 import PurchaseReceiptEmail from '../../../email/PurchaseReceipt';
+import { Prisma } from '@prisma/client';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string);
 const resend = new Resend(process.env.RESEND_API_KEY as string);
@@ -17,6 +18,7 @@ export async function POST(req: NextRequest) {
 	if (event.type === 'charge.succeeded') {
 		const charge = event.data.object;
 		const productId = charge.metadata.productId;
+		const discountCodeId = charge.metadata.discountCodeId;
 		const email = charge.billing_details.email;
 		const priceInCents = charge.amount;
 
@@ -27,8 +29,15 @@ export async function POST(req: NextRequest) {
 
 		const userFields = {
 			email,
-			orders: { create: { productId, priceInCents } },
+			orders: {
+				create: {
+					productId,
+					priceInCents,
+					...(discountCodeId ? { discountCodeId } : {}),
+				},
+			},
 		};
+		console.log(userFields);
 		const {
 			orders: [order],
 		} = await db.user.upsert({
@@ -44,6 +53,15 @@ export async function POST(req: NextRequest) {
 				expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
 			},
 		});
+
+		if (discountCodeId != null) {
+			await db.discountCode.update({
+				where: { id: discountCodeId },
+				data: {
+					uses: { increment: 1 },
+				},
+			});
+		}
 
 		await resend.emails.send({
 			from: `Support <${process.env.SENDER_EMAIL}>`,

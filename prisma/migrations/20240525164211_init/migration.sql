@@ -34,7 +34,7 @@ CREATE TABLE "Order" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "userId" TEXT NOT NULL,
     "productId" TEXT NOT NULL,
-    "discountCodeId" TEXT NOT NULL,
+    "discountCodeId" TEXT,
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
 );
