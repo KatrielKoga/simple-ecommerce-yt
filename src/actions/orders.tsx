@@ -99,7 +99,7 @@ export async function createPaymentIntent(
 		discountCodeId == null
 			? null
 			: await db.discountCode.findUnique({
-					where: { id: discountCodeId, ...usableDiscountCodeWhere(productId) },
+					where: { id: discountCodeId, ...usableDiscountCodeWhere(product.id) },
 			  });
 
 	if (discountCode == null && discountCodeId != null) {
