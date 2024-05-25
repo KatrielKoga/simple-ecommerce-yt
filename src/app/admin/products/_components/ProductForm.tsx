@@ -48,44 +48,39 @@ export function ProductForm({ product }: { product?: Product | null }) {
 				{error.priceInCents && (
 					<div className="text-destructive">{error.priceInCents}</div>
 				)}
-				<div className="space-y-2">
-					<Label htmlFor="description">Description</Label>
-					<Textarea
-						id="description"
-						name="description"
-						required
-						defaultValue={product?.description || ''}
+			</div>
+			<div className="space-y-2">
+				<Label htmlFor="description">Description</Label>
+				<Textarea
+					id="description"
+					name="description"
+					required
+					defaultValue={product?.description || ''}
+				/>
+				{error.description && (
+					<div className="text-destructive">{error.description}</div>
+				)}
+			</div>
+			<div className="space-y-2">
+				<Label htmlFor="file">File</Label>
+				<Input type="file" id="file" name="file" required={product == null} />
+				{product != null && (
+					<div className="text-muted-foreground">{product.filePath}</div>
+				)}
+				{error.file && <div className="text-destructive">{error.file}</div>}
+			</div>
+			<div className="space-y-2">
+				<Label htmlFor="image">Image</Label>
+				<Input type="file" id="image" name="image" required={product == null} />
+				{product != null && (
+					<Image
+						src={product.imagePath}
+						height={400}
+						width={400}
+						alt="Product Image"
 					/>
-					{error.description && (
-						<div className="text-destructive">{error.description}</div>
-					)}
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor="file">File</Label>
-					<Input type="file" id="file" name="file" required={product == null} />
-					{product != null && (
-						<div className="text-muted-foreground">{product.filePath}</div>
-					)}
-					{error.file && <div className="text-destructive">{error.file}</div>}
-				</div>
-				<div className="space-y-2">
-					<Label htmlFor="image">Image</Label>
-					<Input
-						type="file"
-						id="image"
-						name="image"
-						required={product == null}
-					/>
-					{product != null && (
-						<Image
-							src={product.imagePath}
-							height={400}
-							width={400}
-							alt="Product Image"
-						/>
-					)}
-					{error.image && <div className="text-destructive">{error.image}</div>}
-				</div>
+				)}
+				{error.image && <div className="text-destructive">{error.image}</div>}
 			</div>
 			<SubmitButton />
 		</form>

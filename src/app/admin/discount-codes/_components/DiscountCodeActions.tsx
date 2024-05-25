@@ -4,16 +4,16 @@ import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { DropdownMenuItem } from '../../../../components/ui/dropdown-menu';
 import {
-	deleteProduct,
-	toggleProductAvailability,
-} from '../../_actions/products';
+	deleteDiscountCode,
+	toggleDiscountCodeActive,
+} from '../../_actions/discountCodes';
 
 export function ActiveToggleDropdownItem({
 	id,
-	isAvailableForPurchase,
+	isActive,
 }: {
 	id: string;
-	isAvailableForPurchase: boolean;
+	isActive: boolean;
 }) {
 	const [isPending, startTransition] = useTransition();
 	const router = useRouter();
@@ -22,12 +22,12 @@ export function ActiveToggleDropdownItem({
 			disabled={isPending}
 			onClick={() => {
 				startTransition(async () => {
-					await toggleProductAvailability(id, !isAvailableForPurchase);
+					await toggleDiscountCodeActive(id, !isActive);
 					router.refresh();
 				});
 			}}
 		>
-			{isAvailableForPurchase ? 'Deactivate' : 'Activate'}
+			{isActive ? 'Deactivate' : 'Activate'}
 		</DropdownMenuItem>
 	);
 }
@@ -47,7 +47,7 @@ export function DeleteDropdownItem({
 			disabled={disabled || isPending}
 			onClick={() => {
 				startTransition(async () => {
-					await deleteProduct(id);
+					await deleteDiscountCode(id);
 					router.refresh();
 				});
 			}}
